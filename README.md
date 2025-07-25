@@ -1,9 +1,6 @@
 <h1 align="center">📱 Social Media API</h1>
 
 <p align="center">
-  <a href="https://github.com/seu-usuario/social-media-api/blob/main/LICENSE">
-    <img src="https://img.shields.io/github/license/seu-usuario/social-media-api?color=blue" alt="License">
-  </a>
   <img src="https://img.shields.io/badge/Python-3.10+-green.svg" alt="Python Version">
   <img src="https://img.shields.io/badge/FastAPI-0.104+-red.svg" alt="FastAPI Version">
 </p>
