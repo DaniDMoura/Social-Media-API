@@ -1,0 +1,51 @@
+services:
+  api1:
+    build: .
+    hostname: api1
+    expose:
+      - 8000
+    env_file:
+      - .env.prod
+    depends_on:
+      db:
+        condition: service_healthy
+
+  api2:
+    build: .
+    hostname: api2
+    expose:
+      - 8000
+    env_file:
+      - .env.prod
+    depends_on:
+      db:
+        condition: service_healthy
+
+  db:
+    image: postgres:16
+    hostname: db
+    env_file:
+      - .env.prod
+    volumes:
+      - pg_data:/var/lib/postgresql/data
+    ports:
+      - "5433:5432"
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U postgres"]
+      interval: 5s
+      timeout: 5s
+      retries: 5
+
+  nginx:
+    image: nginx:alpine
+    volumes:
+      - ./nginx.conf:/etc/nginx/nginx.conf:ro
+    depends_on:
+      - api1
+      - api2
+    ports:
+      - "80:80"
+
+volumes:
+  pg_data:
+
