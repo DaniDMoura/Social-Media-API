@@ -41,14 +41,15 @@ async def create_post(
 
 @router.get("/", status_code=HTTPStatus.OK, response_model=ListPostsFeed)
 async def get_posts(
-    offset: int, limit: int, session: AsyncSession = Depends(get_session)
+    offset: int = 0, limit: int = 10, session: AsyncSession = Depends(get_session)
 ):
     db_posts = await session.scalars(select(Post).offset(offset).limit(limit))
+    posts = db_posts.all()
 
-    if not db_posts:
+    if not posts:
         raise HTTPException(detail="No posts found", status_code=HTTPStatus.NOT_FOUND)
 
-    return db_posts.all()
+    return {"posts": posts}
 
 
 @router.get("/{post_id}", status_code=HTTPStatus.OK, response_model=Posts)
@@ -133,6 +134,15 @@ async def like(
     session: AsyncSession = Depends(get_session),
     user: User = Depends(get_current_user),
 ):
+    liked_post = await session.scalar(
+        select(Like).where((Like.post_id == post_id) & (Like.user_id == user.id))
+    )
+
+    if liked_post:
+        raise HTTPException(
+            detail="You cannot like more than once", status_code=HTTPStatus.BAD_REQUEST
+        )
+
     db_like = Like(post_id=post_id, user_id=user.id)
 
     session.add(db_like)

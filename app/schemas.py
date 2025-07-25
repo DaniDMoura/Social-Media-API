@@ -3,6 +3,7 @@ from pydantic import BaseModel, ConfigDict, EmailStr
 from typing import List, Optional
 
 
+
 class ListComment(BaseModel):
     model_config = ConfigDict(from_attributes=True)
     id: int
@@ -51,7 +52,7 @@ class Posts(BaseModel):
     description: str
     image_url: str
     created_at: datetime
-    updated_at: datetime
+    updated_at: Optional[datetime]
     user_id: int
 
     comments: Optional[List[ListComment]] = []
@@ -73,19 +74,15 @@ class ListPostsFeed(BaseModel):
 
 
 class FollowSchema(BaseModel):
-    model_config = ConfigDict(from_attributes=True)
-    id: int
-    username: str
-    full_name: Optional[str] = None
-    email: EmailStr
-    bio: Optional[str] = None
+    follower_id: int
+    followed_id: int
     created_at: datetime
 
+    model_config = ConfigDict(from_attributes=True)
 
 class ListFollowing(BaseModel):
     count: int
-    following: List[FollowSchema]
-
+    following: list[FollowSchema]
 
 class ListFollowers(BaseModel):
     count: int

@@ -6,11 +6,13 @@ from sqlalchemy.exc import IntegrityError
 from sqlalchemy.orm import selectinload
 
 from app.database import get_session
-from app.models import User
+from app.models import User, Follow
 from app.security import get_current_user, get_password_hash
 from app.schemas import (
     CreateUser,
     FollowResponse,
+    ListFollowers,
+    ListFollowing,
     ListUser,
     DeleteUser,
     UnfollowResponse,
@@ -135,36 +137,40 @@ async def get_posts(
     return {"count": len(db_user.posts), "posts": db_user.posts}
 
 
-@router.get("/{user_id}/followers", status_code=HTTPStatus.OK)
+@router.get("/{user_id}/followers", status_code=HTTPStatus.OK, response_model=ListFollowers)
 async def get_followers(
     user_id: int,
     session: AsyncSession = Depends(get_session),
     user: User = Depends(get_current_user),
 ):
-    db_user = await session.scalar(
-        select(User).options(selectinload(User.followers)).where(User.id == user_id)
-    )
-
-    if not db_user:
+    target_user = await session.scalar(select(User).where(User.id == user_id))
+    if not target_user:
         raise HTTPException(detail="User not found", status_code=HTTPStatus.NOT_FOUND)
 
-    return {"count": len(db_user.followers), "followers": db_user.followers}
+    followers = await session.scalars(
+        select(Follow).where(Follow.followed_id == user_id)
+    )
+    followers = list(followers)
+
+    return {"count": len(followers), "followers": followers}
 
 
-@router.get("/{user_id}/following", status_code=HTTPStatus.OK)
+@router.get("/{user_id}/following", status_code=HTTPStatus.OK, response_model=ListFollowing)
 async def get_following(
     user_id: int,
     session: AsyncSession = Depends(get_session),
     user: User = Depends(get_current_user),
 ):
-    db_user = await session.scalar(
-        select(User).options(selectinload(User.followed)).where(User.id == user_id)
-    )
-
-    if not db_user:
+    target_user = await session.scalar(select(User).where(User.id == user_id))
+    if not target_user:
         raise HTTPException(detail="User not found", status_code=HTTPStatus.NOT_FOUND)
 
-    return {"count": len(db_user.followed), "following": db_user.followed}
+    followings = await session.scalars(
+        select(Follow).where(Follow.follower_id == user_id)
+    )
+    followings = list(followings)
+
+    return {"count": len(followings), "following": followings}
 
 
 @router.post(
@@ -184,18 +190,24 @@ async def follow_user(
     if not target_user:
         raise HTTPException(detail="User not found", status_code=HTTPStatus.NOT_FOUND)
 
-    current_user = await session.scalar(
-        select(User).options(selectinload(User.followed)).where(User.id == user.id)
+    existing_follow = await session.scalar(
+        select(Follow).where(
+            Follow.follower_id == user.id,
+            Follow.followed_id == user_id
+        )
     )
 
-    if target_user in current_user.followed:
+    if existing_follow:
         raise HTTPException(
             detail="You are already following this user",
             status_code=HTTPStatus.CONFLICT,
         )
 
-    current_user.followed.append(target_user)
+    follow = Follow(follower_id=user.id, followed_id=user_id)
+
+    session.add(follow)
     await session.commit()
+    await session.refresh(follow)
 
     return {"detail": f"You are now following {target_user.username}"}
 
@@ -217,16 +229,19 @@ async def unfollow_user(
     if not target_user:
         raise HTTPException(detail="User not found", status_code=HTTPStatus.NOT_FOUND)
 
-    current_user = await session.scalar(
-        select(User).options(selectinload(User.followed)).where(User.id == user.id)
+    follow_relationship = await session.scalar(
+        select(Follow).where(
+            Follow.follower_id == user.id,
+            Follow.followed_id == user_id
+        )
     )
 
-    if target_user not in current_user.followed:
+    if not follow_relationship:
         raise HTTPException(
             detail="You are not following this user", status_code=HTTPStatus.NOT_FOUND
         )
 
-    current_user.followed.remove(target_user)
+    await session.delete(follow_relationship)
     await session.commit()
 
     return {"detail": f"You have unfollowed {target_user.username}"}

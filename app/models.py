@@ -10,9 +10,9 @@ class User:
     __tablename__ = "users"
 
     id: Mapped[int] = mapped_column(primary_key=True, init=False)
-    username: Mapped[str] = mapped_column(unique=True)
+    username: Mapped[str] = mapped_column(unique=True, index=True)
     full_name: Mapped[str] = mapped_column(nullable=True)
-    email: Mapped[str] = mapped_column(unique=True)
+    email: Mapped[str] = mapped_column(unique=True, index=True)
     password: Mapped[str]
     bio: Mapped[str] = mapped_column(nullable=True)
     link: Mapped[str] = mapped_column(nullable=True)
@@ -20,22 +20,6 @@ class User:
 
     posts: Mapped[list["Post"]] = relationship(
         back_populates="user", cascade="all, delete-orphan", lazy="selectin", init=False
-    )
-
-    followers: Mapped[list["Follow"]] = relationship(
-        back_populates="followed_user",
-        cascade="all, delete-orphan",
-        foreign_keys="[Follow.followed_id]",
-        lazy="selectin",
-        init=False,
-    )
-
-    followed: Mapped[list["Follow"]] = relationship(
-        back_populates="follower_user",
-        cascade="all, delete-orphan",
-        foreign_keys="[Follow.follower_id]",
-        lazy="selectin",
-        init=False,
     )
 
 
@@ -50,7 +34,7 @@ class Post:
     updated_at: Mapped[datetime] = mapped_column(
         init=False, server_onupdate=func.now(), nullable=True
     )
-    user_id: Mapped[int] = mapped_column(ForeignKey("users.id"))
+    user_id: Mapped[int] = mapped_column(ForeignKey("users.id"), index=True)
 
     user: Mapped["User"] = relationship(
         back_populates="posts", init=False, lazy="selectin"
@@ -70,8 +54,8 @@ class Like:
     __tablename__ = "likes"
 
     id: Mapped[int] = mapped_column(init=False, primary_key=True)
-    user_id: Mapped[int] = mapped_column(ForeignKey("users.id"))
-    post_id: Mapped[int] = mapped_column(ForeignKey("posts.id"))
+    user_id: Mapped[int] = mapped_column(ForeignKey("users.id"), index=True)
+    post_id: Mapped[int] = mapped_column(ForeignKey("posts.id"), index=True)
     created_at: Mapped[datetime] = mapped_column(init=False, server_default=func.now())
 
     post: Mapped["Post"] = relationship(back_populates="likes", init=False)
@@ -83,7 +67,7 @@ class Comment:
 
     id: Mapped[int] = mapped_column(init=False, primary_key=True)
     user_id: Mapped[int] = mapped_column(ForeignKey("users.id"))
-    post_id: Mapped[int] = mapped_column(ForeignKey("posts.id"))
+    post_id: Mapped[int] = mapped_column(ForeignKey("posts.id"), index=True)
     comment: Mapped[str]
     created_at: Mapped[datetime] = mapped_column(init=False, server_default=func.now())
 
@@ -94,14 +78,6 @@ class Comment:
 class Follow:
     __tablename__ = "follows"
 
-    follower_id: Mapped[int] = mapped_column(ForeignKey("users.id"), primary_key=True)
-    followed_id: Mapped[int] = mapped_column(ForeignKey("users.id"), primary_key=True)
+    follower_id: Mapped[int] = mapped_column(ForeignKey("users.id"), primary_key=True, index=True)
+    followed_id: Mapped[int] = mapped_column(ForeignKey("users.id"), primary_key=True, index=True)
     created_at: Mapped[datetime] = mapped_column(init=False, server_default=func.now())
-
-    follower_user: Mapped["User"] = relationship(
-        back_populates="followed", foreign_keys=[follower_id], init=False
-    )
-
-    followed_user: Mapped["User"] = relationship(
-        back_populates="followers", foreign_keys=[followed_id], init=False
-    )
