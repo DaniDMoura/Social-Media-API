@@ -137,7 +137,9 @@ async def get_posts(
     return {"count": len(db_user.posts), "posts": db_user.posts}
 
 
-@router.get("/{user_id}/followers", status_code=HTTPStatus.OK, response_model=ListFollowers)
+@router.get(
+    "/{user_id}/followers", status_code=HTTPStatus.OK, response_model=ListFollowers
+)
 async def get_followers(
     user_id: int,
     session: AsyncSession = Depends(get_session),
@@ -155,7 +157,9 @@ async def get_followers(
     return {"count": len(followers), "followers": followers}
 
 
-@router.get("/{user_id}/following", status_code=HTTPStatus.OK, response_model=ListFollowing)
+@router.get(
+    "/{user_id}/following", status_code=HTTPStatus.OK, response_model=ListFollowing
+)
 async def get_following(
     user_id: int,
     session: AsyncSession = Depends(get_session),
@@ -192,8 +196,7 @@ async def follow_user(
 
     existing_follow = await session.scalar(
         select(Follow).where(
-            Follow.follower_id == user.id,
-            Follow.followed_id == user_id
+            Follow.follower_id == user.id, Follow.followed_id == user_id
         )
     )
 
@@ -231,8 +234,7 @@ async def unfollow_user(
 
     follow_relationship = await session.scalar(
         select(Follow).where(
-            Follow.follower_id == user.id,
-            Follow.followed_id == user_id
+            Follow.follower_id == user.id, Follow.followed_id == user_id
         )
     )
 

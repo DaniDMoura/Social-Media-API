@@ -3,7 +3,6 @@ from pydantic import BaseModel, ConfigDict, EmailStr
 from typing import List, Optional
 
 
-
 class ListComment(BaseModel):
     model_config = ConfigDict(from_attributes=True)
     id: int
@@ -80,9 +79,11 @@ class FollowSchema(BaseModel):
 
     model_config = ConfigDict(from_attributes=True)
 
+
 class ListFollowing(BaseModel):
     count: int
     following: list[FollowSchema]
+
 
 class ListFollowers(BaseModel):
     count: int
@@ -100,7 +101,6 @@ class ListUser(BaseModel):
     created_at: datetime
 
     posts: Optional[List[Posts]] = []
-
 
 
 class DeleteUser(BaseModel):
