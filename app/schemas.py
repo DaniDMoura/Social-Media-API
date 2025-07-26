@@ -100,8 +100,7 @@ class ListUser(BaseModel):
     created_at: datetime
 
     posts: Optional[List[Posts]] = []
-    followers: Optional[List[FollowSchema]] = []
-    followed: Optional[List[FollowSchema]] = []
+
 
 
 class DeleteUser(BaseModel):
